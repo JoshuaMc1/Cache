@@ -25,6 +25,6 @@
     ],
     "minimum-stability": "stable",
     "bin": [
-        "publish-config"
+        "publish-config-cache"
     ]
 }
