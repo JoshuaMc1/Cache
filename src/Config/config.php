@@ -6,10 +6,10 @@ return [
     'ttl' => 3600,
     'drivers' => [
         'file' => [
-            'path' => sprintf('%s/../.cache',  __DIR__),
+            'path' => sprintf('%s/../storage/.cache',  __DIR__),
         ],
         'sqlite' => [
-            'database' => sprintf('%s/../.cache/database.sqlite',  __DIR__),
+            'database' => sprintf('%s/../storage/.cache/database.sqlite',  __DIR__),
         ],
         'mysql' => [
             'host' => '127.0.0.1',
