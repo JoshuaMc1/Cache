@@ -17,22 +17,18 @@ if (!file_exists($targetFile)) {
     echo "Configuration file already exists at $targetFile.\n";
 }
 
-// Create .cache directory if it doesn't exist
-$cacheDir = getcwd() . '/.cache';
+$cacheDir = getcwd() . '/storage/.cache';
 
 if (!is_dir($cacheDir)) {
     mkdir($cacheDir, 0777, true);
 }
 
-// create database.sqlite and .gitignore if they don't exist
 $databaseFile = "$cacheDir/database.sqlite";
 $gitignoreFile = "$cacheDir/.gitignore";
 
 if (!file_exists($databaseFile)) {
     touch($databaseFile);
     echo "Database file created at $databaseFile.\n";
-} else {
-    echo "Database file already exists at $databaseFile.\n";
 }
 
 if (!file_exists($gitignoreFile)) {
@@ -47,8 +43,6 @@ if (!file_exists($gitignoreFile)) {
     );
 
     echo "Gitignore file created at $gitignoreFile.\n";
-} else {
-    echo "Gitignore file already exists at $gitignoreFile.\n";
 }
 
 exit(0);
