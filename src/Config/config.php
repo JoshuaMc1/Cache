@@ -9,7 +9,7 @@ return [
             'path' => sprintf('%s/../storage/.cache',  __DIR__),
         ],
         'sqlite' => [
-            'database' => sprintf('%s/../storage/.cache/database.sqlite',  __DIR__),
+            'database' => sprintf('%s/../storage/.cache/cache.sqlite',  __DIR__),
         ],
         'mysql' => [
             'host' => '127.0.0.1',

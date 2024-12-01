@@ -23,7 +23,7 @@ if (!is_dir($cacheDir)) {
     mkdir($cacheDir, 0777, true);
 }
 
-$databaseFile = "$cacheDir/database.sqlite";
+$databaseFile = "$cacheDir/cache.sqlite";
 $gitignoreFile = "$cacheDir/.gitignore";
 
 if (!file_exists($databaseFile)) {
