@@ -14,7 +14,7 @@ class Cache
     private function __construct()
     {
 
-        $this->config = require getcwd() . '/config/cache.php';
+        $this->config = require __DIR__ . '/config/cache.php';
 
         $this->initializeDriver();
     }
