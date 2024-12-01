@@ -39,12 +39,17 @@ class DatabaseCacheDriver implements CacheInterface
         $this->table = 'cache';
 
         try {
+            $driver = $config['driver'] ?? 'sqlite';
+
             $dsn = $this->buildDsn($config);
 
-            $this->pdo = new PDO($dsn, $config['username'] ?? null, $config['password'] ?? null);
+            $driver === 'sqlite' ?
+                $this->pdo = new PDO($dsn) :
+                $this->pdo = new PDO($dsn, $config['drivers'][$driver]['username'], $config['drivers'][$driver]['password']);
+
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $this->ensureTableExists($config['driver']);
+            $this->ensureTableExists($driver);
         } catch (Exception $e) {
             throw new Exception("Error connecting to database: " . $e->getMessage());
         }
@@ -71,8 +76,10 @@ class DatabaseCacheDriver implements CacheInterface
      */
     private function buildDsn(array $config): string
     {
-        if ($config['driver'] === 'sqlite') {
-            $configDriver = $config['drivers']['sqlite'];
+        $driver = $config['driver'] ?? 'sqlite';
+
+        if ($driver === 'sqlite') {
+            $configDriver = $config['drivers'][$driver];
 
             $databasePath = $configDriver['database'];
 
@@ -91,11 +98,11 @@ class DatabaseCacheDriver implements CacheInterface
 
         return sprintf(
             '%s:host=%s;port=%d;dbname=%s;charset=%s',
-            $config['driver'],
-            $config['host'],
-            $config['port'],
-            $config['database'],
-            $config['charset']
+            $driver,
+            $config['drivers'][$driver]['host'],
+            $config['drivers'][$driver]['port'],
+            $config['drivers'][$driver]['database'],
+            $config['drivers'][$driver]['charset']
         );
     }
 
@@ -111,11 +118,9 @@ class DatabaseCacheDriver implements CacheInterface
      */
     private function ensureTableExists(string $driver)
     {
-        if ($driver === 'sqlite') {
-            $this->ensureTableExistsSqlite();
-        } else {
+        $driver === 'sqlite' ?
+            $this->ensureTableExistsSqlite() :
             $this->ensureTableExistsMysql();
-        }
     }
 
     /**
@@ -163,7 +168,7 @@ class DatabaseCacheDriver implements CacheInterface
                 cache_value TEXT NOT NULL,
                 expires_at INT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ";
 
         $this->pdo->exec($createTableSQL);
@@ -219,15 +224,11 @@ class DatabaseCacheDriver implements CacheInterface
     }
 
     /**
-     * Sets a cache entry in the database.
-     *
-     * If a cache entry with the same key already exists, it will be updated 
-     * with the new value and expiration time.
+     * Stores a cache entry in the database.
      *
      * @param string $key The key of the cache entry.
-     * @param mixed $value The value of the cache entry.
-     * @param int $ttl The time to live for the cache entry, in seconds. 
-     *                 Defaults to 3600 (1 hour).
+     * @param mixed $value The value to cache.
+     * @param int $ttl The time-to-live for the cache entry in seconds. Defaults to 3600 seconds.
      *
      * @return void
      */
@@ -236,16 +237,21 @@ class DatabaseCacheDriver implements CacheInterface
         $expiresAt = time() + $ttl;
         $serializedValue = serialize($value);
 
-        $sql = "
-            INSERT INTO {$this->table} (cache_key, cache_value, expires_at)
-            VALUES (:cache_key, :cache_value, :expires_at)
-            ON CONFLICT(cache_key)
-            DO UPDATE SET
-                cache_value = excluded.cache_value,
-                expires_at = excluded.expires_at;
-        ";
+        $sql = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ?
+            "
+                INSERT INTO {$this->table} (cache_key, cache_value, expires_at)
+                VALUES (:cache_key, :cache_value, :expires_at)
+                ON DUPLICATE KEY UPDATE
+                    cache_value = VALUES(cache_value),
+                    expires_at = VALUES(expires_at);
+            " :
+            "
+                INSERT OR REPLACE INTO {$this->table} (cache_key, cache_value, expires_at)
+                VALUES (:cache_key, :cache_value, :expires_at);
+            ";
 
         $stmt = $this->pdo->prepare($sql);
+
         $stmt->execute([
             ':cache_key' => $key,
             ':cache_value' => $serializedValue,
