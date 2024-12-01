@@ -80,11 +80,11 @@ class Cache
                 break;
 
             case 'mysql':
-                $this->driverInstance = new DatabaseCacheDriver($driverConfig);
+                $this->driverInstance = new DatabaseCacheDriver($this->config);
                 break;
 
             case 'sqlite':
-                $this->driverInstance = new DatabaseCacheDriver($driverConfig);
+                $this->driverInstance = new DatabaseCacheDriver($this->config);
                 break;
 
             default:
